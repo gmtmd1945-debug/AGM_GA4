@@ -2296,6 +2296,17 @@ function doSearch(event) {
   if (event) event.preventDefault();
   const query = document.getElementById('search-input').value.trim();
   if (!query) { navigate('/'); return; }
+
+  // [GA4] 검색 (권장 이벤트) — 빈 검색어는 수집 안 함
+  const PAGE_TYPE_MAP = { product: 'product_detail', 'order-complete': 'order_complete' };
+  const rawType = document.body.getAttribute('data-page-type') || 'home';
+  trackEvent('search', {
+    search_term:         query,
+    search_result_count: searchProducts(query).length,   // 0이면 결과 없는 검색
+    page_type:           PAGE_TYPE_MAP[rawType] || rawType,  // 검색한 화면
+    login_status:        currentUser ? 'logged_in' : 'logged_out'
+  });
+
   pendingScrollTo = 'section-all-products';
   navigate('/search/' + encodeURIComponent(query));
 }
