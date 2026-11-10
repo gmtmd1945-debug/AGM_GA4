@@ -2335,6 +2335,52 @@ function goToBanner(idx) {
   document.getElementById('banner-track').style.transform = `translateX(-${bannerIdx * 100}%)`;
   document.querySelectorAll('.banner-dot').forEach((d, i) => d.classList.toggle('is-active', i === bannerIdx));
   resetBannerTimer();
+  trackTopBannerView();
+}
+
+// ── [GA4] 상단 배너 노출(view_promotion) / 클릭(select_promotion) ──
+// 노출: 배너 영역이 화면에 50% 이상 보이고, 메인 화면이며, 탭이 활성일 때
+//       현재 슬라이드를 페이지 로드당 배너별 1회만 수집 (자동 슬라이드로 인한 중복 방지)
+let topBannerInView = false;
+const topBannerSeen = new Set();
+
+function topBannerParams(slide) {
+  return {
+    promotion_id:   'top_banner_' + slide.dataset.bannerId,
+    promotion_name: slide.dataset.bannerTitle,
+    creative_slot:  'top_banner_' + slide.dataset.bannerId   // 슬라이드 순번(1~5)
+  };
+}
+
+function trackTopBannerView() {
+  if (!topBannerInView || document.visibilityState !== 'visible') return;
+  if (!document.getElementById('page-home').classList.contains('is-active')) return;
+  const slide = document.querySelectorAll('#banner-track .banner-slide')[bannerIdx];
+  if (!slide || topBannerSeen.has(slide.id)) return;
+  topBannerSeen.add(slide.id);
+  trackEvent('view_promotion', topBannerParams(slide));
+}
+
+function initTopBannerTracking() {
+  const hero = document.getElementById('hero');
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(entries => {
+      topBannerInView = entries[0].isIntersecting;
+      trackTopBannerView();
+    }, { threshold: 0.5 }).observe(hero);
+  }
+  document.addEventListener('visibilitychange', trackTopBannerView);
+  window.addEventListener('hashchange', () => setTimeout(trackTopBannerView, 0));
+
+  // 클릭: 배너의 CTA 버튼
+  document.getElementById('banner-track').addEventListener('click', e => {
+    const cta = e.target.closest('.banner-cta');
+    if (!cta) return;
+    const slide = cta.closest('.banner-slide');
+    trackEvent('select_promotion', Object.assign(topBannerParams(slide), {
+      click_text: cta.textContent.trim()
+    }));
+  });
 }
 
 function moveBanner(dir) {
@@ -2357,6 +2403,7 @@ updateCartCount();
 updateWishlistCount();
 renderHomeSections();
 initItemTracking();
+initTopBannerTracking();
 renderRecentlyViewed();
 tickDealTimer();
 setInterval(tickDealTimer, 1000);
