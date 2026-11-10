@@ -10,6 +10,11 @@
     gtag('js', new Date());
   </script>
   <!-- End Google Tag Manager -->
+  <!-- GA4 직접 전송 (맞춤 이벤트용) — page_view는 GTM의 GA4 태그가 보내므로 여기선 끔 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-KFWCR0PD5Z"></script>
+  <script>
+    gtag('config', 'G-KFWCR0PD5Z', { send_page_view: false });
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AGM마켓 | 신선식품 전문 온라인몰</title>
 
@@ -1170,11 +1175,12 @@ function renderRecentlyViewed() {
 
 // ────────────────────────────────
 // GA4 이벤트 추적 (텍소노미: GA4 web이벤트 리스트)
-// dataLayer로 push → GTM의 맞춤 이벤트 트리거로 GA4 이벤트 태그 발송
+// gtag.js로 GA4(G-KFWCR0PD5Z)에 직접 전송
 // ────────────────────────────────
+const GA4_ID = 'G-KFWCR0PD5Z';
 function trackEvent(eventName, params) {
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push(Object.assign({ event: eventName }, params));
+  if (typeof gtag !== 'function') return;
+  gtag('event', eventName, Object.assign({ send_to: GA4_ID }, params));
 }
 
 // 상세페이지 이벤트 공통 매개변수: item_name, item_option, value(선택 옵션 가격 × 수량)
