@@ -451,7 +451,7 @@
           <button id="btn-logout" onclick="doLogout()">로그아웃</button>
         </div>
       </div>
-      <button class="btn-header" id="btn-wishlist-header" onclick="openWishlist()">
+      <button class="btn-header" id="btn-wishlist-header" onclick="openWishlist('header')">
         ♡ <span class="cart-item-count" id="wishlist-count">0</span>
       </button>
       <button class="btn-cart" id="btn-open-cart" onclick="openCart()">
@@ -1386,7 +1386,18 @@ function showPage(name) {
 
 function goHome()      { navigate('/'); }
 function openCart()    { navigate('/cart'); }
-function openWishlist(){ navigate('/wishlist'); }
+function openWishlist(clickLocation) {
+  // [GA4] 찜 목록 이동 — 이동 전 화면 기준으로 매개변수 수집
+  const PAGE_TYPE_MAP = { product: 'product_detail', 'order-complete': 'order_complete' };
+  const rawType = document.body.getAttribute('data-page-type') || 'home';
+  trackEvent('go_to_wishlist', {
+    click_location: clickLocation || 'header',
+    page_type:      PAGE_TYPE_MAP[rawType] || rawType,
+    wishlist_count: wishlist.length,
+    login_status:   currentUser ? 'logged_in' : 'logged_out'
+  });
+  navigate('/wishlist');
+}
 
 // ────────────────────────────────
 // PRODUCT GRID
