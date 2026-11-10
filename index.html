@@ -1122,6 +1122,7 @@ function toggleWishlist(productId, event) {
   } else {
     wishlist.push(productId);
     showToast('♥ 찜 목록에 추가했습니다');
+    trackAddToWishlist(p, event);
   }
   saveWishlist();
   updateWishlistCount();
@@ -1176,6 +1177,23 @@ const GA4_ID = 'G-KFWCR0PD5Z';
 function trackEvent(eventName, params) {
   if (typeof gtag !== 'function') return;
   gtag('event', eventName, Object.assign({ send_to: GA4_ID }, params));
+}
+
+// [GA4] 찜 담기 (♡ → ♥ 일 때만, 해제는 추적 안 함)
+// 상세페이지 버튼은 선택한 옵션, 상품 카드 버튼은 기본 옵션 기준
+function trackAddToWishlist(product, event) {
+  if (!product) return;
+  const isDetail = !!(event && event.currentTarget && event.currentTarget.id === 'btn-wishlist-detail');
+  const variant = isDetail ? getVariant(product, selectedVariantId) : product.variants[0];
+  trackEvent('add_to_wishlist', {
+    item_name:      product.name,
+    item_option:    variant.label,
+    value:          variant.price,
+    currency:       'KRW',
+    click_location: isDetail ? 'product_detail' : 'product_card',
+    login_status:   currentUser ? 'logged_in' : 'logged_out',
+    wishlist_count: wishlist.length   // 담은 뒤 개수
+  });
 }
 
 // 상세페이지 이벤트 공통 매개변수: item_name, item_option, value(선택 옵션 가격 × 수량)
